@@ -39,7 +39,7 @@ public class Alien extends Entity {
         alive = false;
     }
 
-    // drawing alien
+    // drawing alien g
     public void draw(Graphics2D g) {
         if (alive) {
             g.setColor(Color.GREEN);
