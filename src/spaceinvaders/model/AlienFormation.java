@@ -4,10 +4,68 @@
  */
 package spaceinvaders.model;
 
-/**
- *
- * @author dobre
- */
+import java.awt.Graphics2D;
+import java.util.Random;
+
 public class AlienFormation {
-    
-}
+
+    private static final int ROWS = 5;
+    private static final int COLS = 10;
+    private static final int GAP = 15;        // space between aliens
+    private static final int SPEED = 2;       // how many pixels they move per frame
+    private static final int STEP_DOWN = 20;  // how far they step down at the edge
+
+    // array 2d
+    private Alien[][] aliens = new Alien[ROWS][COLS];
+
+    private int direction = 1;
+    private int boardWidth;
+    private Random random = new Random();
+
+    public AlienFormation(int boardWidth) {
+        this.boardWidth = boardWidth;
+
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                int x = 50 + col * (Alien.WIDTH + GAP);
+                int y = 50 + row * (Alien.HEIGHT + GAP);
+                aliens[row][col] = new Alien(x, y);
+            }
+        }
+    }
+
+    // UPDATE - called every frame from GameModel; moves the formation.
+    // 1. Goes through all living aliens and checks whether any of them would
+    //    leave the screen on the next step (nextX < 0 or nextX + WIDTH > boardWidth).
+    // 2. If yes: reverses direction (direction = -direction) and the whole formation moves down 20 pixels.
+    // 3. If no: they all move sideways by SPEED pixels (right or left).
+    public void update() {
+        // 1. Check whether any living alien has reached the edge
+        boolean hitEdge = false;
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                Alien a = aliens[row][col];
+                if (a.isAlive()) {
+                    int nextX = a.getX() + direction * SPEED;
+                    if (nextX < 0 || nextX + Alien.WIDTH > boardWidth) {
+                        hitEdge = true;
+                    }
+                }
+            }
+
+        }
+        // 2. If so: reverse direction and move down. Otherwise: move sideways.
+        int dx = direction * SPEED;
+        int dy = 0;
+        if (hitEdge) {
+            direction = -direction;
+            dx = 0;
+            dy = STEP_DOWN;
+        }
+
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                aliens[row][col].move(dx, dy);
+            }
+        }
+    }
