@@ -1,13 +1,19 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package spaceinvaders.model;
 
-/**
- *
- * @author dobre
- */
-public class Bullet {
+import spaceinvaders.Constants;
+
+public class Bullet extends Entity{
+    
+    public Bullet(int x, int y){
+        super(x, y, Constants.BULLET_WIDTH, Constants.BULLET_HEIGHT);
+    }
+    
+    public void update() {
+        y -= Constants.BULLET_SPEED;
+    }
+    
+    public boolean isOffScreen() {
+        return y + height < 0;
+    }
     
 }
