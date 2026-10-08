@@ -7,17 +7,22 @@ package spaceinvaders.model;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
+/**
+ * A single alien. It can move, be killed and has a point value that the gets
+ * when it is shot.
+ */
 public class Alien extends Entity {
 
     // static const int 
     public static final int WIDTH = 30;
     public static final int HEIGHT = 20;
 
-    
     private boolean alive = true;
+    private int points;
 
-    public Alien(int x, int y) {
+    public Alien(int x, int y, int points) {
         super(x, y, WIDTH, HEIGHT);   // calls the parent (Entity) constructor
+        this.points = points;
     }
 
     // moves
@@ -27,8 +32,8 @@ public class Alien extends Entity {
     }
 
     // shoots from the middle of the alien (5-velocity) 
-    public Bullet shoot() {
-        return new Bullet(x + WIDTH / 2, y + HEIGHT, 5);
+    public int getPoints() {
+        return points;
     }
 
     public boolean isAlive() {
@@ -47,5 +52,3 @@ public class Alien extends Entity {
         }
     }
 }
-
-

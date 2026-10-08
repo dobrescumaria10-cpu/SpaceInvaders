@@ -1,7 +1,11 @@
 package spaceinvaders.model;
 
 import java.awt.Rectangle;
-
+/**
+ * Base class of everything that is drawn in the game and has a position and
+ * a size (player, aliens, bullets). Provides the bounding box used for 
+ * collision detection.
+ */
 public abstract class Entity {
 
     protected int x, y;

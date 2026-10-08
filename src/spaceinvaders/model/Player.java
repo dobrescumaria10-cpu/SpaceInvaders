@@ -2,6 +2,10 @@ package spaceinvaders.model;
 
 import spaceinvaders.Constants;
 
+/**
+ * The cannon controlled by the player. It moves horizontally at a fixed height
+ * and cannot leave the window.
+ */
 public class Player extends Entity {
 
     public Player() {

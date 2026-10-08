@@ -2,6 +2,9 @@ package spaceinvaders;
 
 import spaceinvaders.model.Bullet;
 import spaceinvaders.model.Player;
+import spaceinvaders.model.Alien;
+import spaceinvaders.model.AlienFormation;
+import spaceinvaders.model.GameModel;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -14,12 +17,16 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The game screen. It runs the game loop with a Swing timer, read the keyboard,
+ * updates all game objects every frame and draws them.
+ */
 public class GamePanel extends JPanel {
 
     private final Timer timer;
     private final Player player = new Player();
-    private final List<Bullet> bullets = new ArrayLists<>();
-    private final AlienFormation formation = new AlienFormation();
+    private final List<Bullet> bullets = new ArrayList<>();
+    private final AlienFormation formation = new AlienFormation(Constants.WIDTH);
     private final GameModel model = new GameModel();
 
     private boolean leftHeld, rightHeld, spaceHeld;
@@ -83,24 +90,24 @@ public class GamePanel extends JPanel {
 
         formation.update();
 
-        List<Bullets> deadBullets = new ArrayList<>();
-        list<Alien> deadAliens = new ArrayList<>();
+        Alien[][] grid = formation.getAliens();
+        List<Bullet> deadBullets = new ArrayList<>();
         for (Bullet b : bullets) {
-            for (Alien a : formation.getAlien()) {
-                if (deadAliens.contains(a)) {
-                    continue;
-                }
-                if (b.getBounds().intersects(a.getBounds())) {
-                    model.addScore(a.getPoints());
-                    deadBullets.add(b);
-                    deadAliens.add(a);
-                    break;
+            boolean hit = false;
+            for (int row = 0; row < grid.length && !hit; row++) {
+                for (int col = 0; col < grid[row].length && !hit; col++) {
+                    Alien a = grid[row][col];
+                    if (a.isAlive() && b.getBounds().intersects(a.getBounds())) {
+                        a.kill();
+                        model.addScore(a.getPoints());
+                        deadBullets.add(b);
+                        hit = true;
+                    }
                 }
             }
-
         }
         bullets.removeAll(deadBullets);
-        formation.getAliens().removeAll(deadAliens);
+
     }
 
     @Override
@@ -109,20 +116,26 @@ public class GamePanel extends JPanel {
 
         g.setColor(Color.GREEN);
         g.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
-        
+
         g.setColor(Color.WHITE);
-        for (Bullet b : bullets){
+        for (Bullet b : bullets) {
             g.fillRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
         }
-        
-        for (Alien a : formation.getAliens()) {
-            g.setColor(a.getPoints() == 30 ? Color.MAGENTA : a.getPoints() == 20 ? Color.CYAN : Color.YELLOW);
-            g.fillRect(a.getX(), a.getY(), a.getWidth(), a.getHeight());
+
+        Alien[][] grid = formation.getAliens();
+        for (int row = 0; row < grid.length; row++) {
+            for (int col = 0; col < grid[row].length; col++) {
+                Alien a = grid[row][col];
+                if (a.isAlive()) {
+                    g.setColor(a.getPoints() == 30 ? Color.MAGENTA : a.getPoints() == 20 ? Color.CYAN : Color.YELLOW);
+                    g.fillRect(a.getX(), a.getY(), a.getWidth(), a.getHeight());
+                }
+            }
         }
-        
-        g.setColor( Color.WHITE);
+
+        g.setColor(Color.WHITE);
         g.setFont(new Font("Monospaced", Font.BOLD, 18));
-        g.drawString("SCORE:" + model.getScore(), 10, 25);
+        g.drawString("SCORE: " + model.getScore(), 10, 25);
 
     }
 }

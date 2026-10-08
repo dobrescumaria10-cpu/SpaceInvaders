@@ -1,13 +1,38 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package spaceinvaders.model;
 
 /**
- *
- * @author dobre
+ * Holds the game data that does not belong to a single object: score, lives and
+ * wave number.
  */
 public class GameModel {
-    
+
+    private int score;
+    private int lives;
+    private int wave;
+
+    public GameModel() {
+        reset();
+    }
+
+    public void reset() {
+        score = 0;
+        lives = 3;
+        wave = 1;
+    }
+
+    public void addScore(int points) {
+        score += points;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public int getLives() {
+        return lives;
+    }
+
+    public int getWave() {
+        return wave;
+    }
 }
