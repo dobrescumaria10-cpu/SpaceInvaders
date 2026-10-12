@@ -16,7 +16,7 @@ import spaceinvaders.Constants;
 public class AlienFormation {
 
     private static final int ROWS = 5;
-    private static final int COLS = 9;
+    private static final int COLS = 8;
     private static final int GAP = 15;        // space between aliens
     private static final int SPEED = 2;       // how many pixels they move per frame
     private static final int STEP_DOWN = 20;  // how far they step down at the edge

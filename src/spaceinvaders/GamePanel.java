@@ -23,12 +23,18 @@ import java.util.List;
  */
 public class GamePanel extends JPanel {
 
+    private enum Screen {
+        MENU, PLAYING
+    }
+
     private final Timer timer;
     private final Player player = new Player();
     private final List<Bullet> bullets = new ArrayList<>();
     private final List<Bullet> alienBullets = new ArrayList<>();
     private AlienFormation formation = new AlienFormation(Constants.WIDTH);
     private final GameModel model = new GameModel();
+
+    private Screen screen = Screen.MENU;
 
     private boolean leftHeld, rightHeld, spaceHeld;
     private long lastShotTime = 0;
@@ -64,6 +70,13 @@ public class GamePanel extends JPanel {
     }
 
     private void setKey(int code, boolean down) {
+
+        if (screen == Screen.MENU) {
+            if (down && code == KeyEvent.VK_ENTER) {
+                restart();
+                screen = Screen.PLAYING;
+            }
+        }
         if (code == KeyEvent.VK_LEFT) {
             leftHeld = down;
         }
@@ -73,8 +86,13 @@ public class GamePanel extends JPanel {
         if (code == KeyEvent.VK_SPACE) {
             spaceHeld = down;
         }
-        if (code == KeyEvent.VK_ENTER && down && model.isGameOver()) {
-            restart();
+        if (down && model.isGameOver()) {
+            if (code == KeyEvent.VK_ENTER) {
+                restart();
+            }
+            if (code == KeyEvent.VK_M) {
+                screen = Screen.MENU;
+            }
         }
 
     }
@@ -87,13 +105,16 @@ public class GamePanel extends JPanel {
         player.respawn();
         player.makeInvulnerable(0);
         waveMessageUntil = 0;
+        leftHeld = false;
+        rightHeld = false;
+        spaceHeld = false;
     }
 
     private void update() {
 
         long now = System.currentTimeMillis();
 
-        if (model.isGameOver() || now < waveMessageUntil) {
+        if (screen == Screen.MENU || model.isGameOver() || now < waveMessageUntil) {
             return;
         }
 
@@ -183,6 +204,11 @@ public class GamePanel extends JPanel {
         super.paintComponent(g);
         long now = System.currentTimeMillis();
 
+        if (screen == Screen.MENU) {
+            drawMenu(g);
+            return;
+        }
+
         boolean showPlayer = !player.isInvulnerable(now) || (now / 100) % 2 == 0;
 
         if (showPlayer) {
@@ -229,11 +255,27 @@ public class GamePanel extends JPanel {
             g.setColor(Color.WHITE);
             g.setFont(new Font("Monospaced", Font.BOLD, 20));
             drawCentered(g, "Final score: " + model.getScore(), Constants.HEIGHT / 2 + 20);
-            drawCentered(g, "Press ENTER to play again", Constants.HEIGHT / 2 + 50);
+            drawCentered(g, "ENTER: play again    M: menu", Constants.HEIGHT / 2 + 50);
         }
 
     }
-    
+
+    private void drawMenu(Graphics g) {
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Monospaced", Font.BOLD, 56));
+        drawCentered(g, "SPACE INVADERS", 200);
+
+        g.setColor(Color.GREEN);
+        g.setFont(new Font("Monospaced", Font.BOLD, 24));
+        drawCentered(g, "Press ENTER to start", 300);
+
+        g.setColor(Color.LIGHT_GRAY);
+        g.setFont(new Font("Monospaced", Font.PLAIN, 16));
+        drawCentered(g, "LEFT / RIGHT: move", 380);
+        drawCentered(g, "SPACE: shoot", 405);
+
+    }
+
     private void drawCentered(Graphics g, String text, int y) {
         int textWidth = g.getFontMetrics().stringWidth(text);
         g.drawString(text, (Constants.WIDTH - textWidth) / 2, y);
