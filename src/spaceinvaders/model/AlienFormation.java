@@ -16,7 +16,7 @@ import spaceinvaders.Constants;
 public class AlienFormation {
 
     private static final int ROWS = 5;
-    private static final int COLS = 10;
+    private static final int COLS = 9;
     private static final int GAP = 15;        // space between aliens
     private static final int SPEED = 2;       // how many pixels they move per frame
     private static final int STEP_DOWN = 20;  // how far they step down at the edge
@@ -26,10 +26,16 @@ public class AlienFormation {
 
     private int direction = 1;
     private int boardWidth;
+    private int wave;
     private Random random = new Random();
-
+    
     public AlienFormation(int boardWidth) {
+        this(boardWidth, 1);
+    }
+
+    public AlienFormation(int boardWidth, int wave) {
         this.boardWidth = boardWidth;
+        this.wave = wave;
 
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
@@ -59,11 +65,38 @@ public class AlienFormation {
     public boolean isEmpty() {
         return countAlive() == 0;
     }
+    
+    public Alien pickShooter() {
+        int start = random.nextInt(COLS);
+        for (int i = 0; i < COLS; i++) {
+            int col = (start + i) % COLS;
+            for (int row = ROWS - 1; row >= 0; row--) {
+                if (aliens[row][col].isAlive()) {
+                    return aliens[row][col];
+                }
+            }
+        }
+        return null;
+    }
+    
+    public int lowestAliveBottom() {
+        int bottom = 0;
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                Alien a = aliens[row][col];
+                if (a.isAlive()) {
+                    bottom = Math.max(bottom, a.getY() + a.getHeight());
+                }
+                
+            }
+        }
+        return bottom;
+    }
 
     private int currentSpeed() {
         int total = ROWS * COLS;
         int killed = total - countAlive();
-        return SPEED + killed * 4 / total;
+        return SPEED + (wave - 1) + killed * 4 / total;
     }
 
     // UPDATE - called every frame from GameModel; moves the formation.

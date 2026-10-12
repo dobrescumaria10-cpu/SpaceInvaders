@@ -34,5 +34,11 @@ public final class Constants {
     public static final int FORMATION_START_Y = 70;
     public static final int ALIEN_STEP_DOWN = 16;
     public static final int[] ROW_POINTS = {30, 20, 20, 10, 10};
+    
+    public static final int ALIEN_BULLET_SPEED = 4;
+    public static final int MAX_ALIEN_BULLETS = 3;
+    public static final int ALIEN_SHOOT_INTERVAL_MS = 800;
+    public static final int INVULNERABLE_MS = 1500;
+    public static final int WAVE_MESSAGE_MS = 2000;
 
 }

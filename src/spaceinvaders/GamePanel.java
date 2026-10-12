@@ -26,11 +26,14 @@ public class GamePanel extends JPanel {
     private final Timer timer;
     private final Player player = new Player();
     private final List<Bullet> bullets = new ArrayList<>();
-    private final AlienFormation formation = new AlienFormation(Constants.WIDTH);
+    private final List<Bullet> alienBullets = new ArrayList<>();
+    private AlienFormation formation = new AlienFormation(Constants.WIDTH);
     private final GameModel model = new GameModel();
 
     private boolean leftHeld, rightHeld, spaceHeld;
     private long lastShotTime = 0;
+    private long lastAlienShotTime = 0;
+    private long waveMessageUntil = 0;
 
     public GamePanel() {
         setPreferredSize(new Dimension(Constants.WIDTH, Constants.HEIGHT));
@@ -70,13 +73,32 @@ public class GamePanel extends JPanel {
         if (code == KeyEvent.VK_SPACE) {
             spaceHeld = down;
         }
+        if (code == KeyEvent.VK_ENTER && down && model.isGameOver()) {
+            restart();
+        }
 
     }
 
+    private void restart() {
+        model.reset();
+        formation = new AlienFormation(Constants.WIDTH);
+        bullets.clear();
+        alienBullets.clear();
+        player.respawn();
+        player.makeInvulnerable(0);
+        waveMessageUntil = 0;
+    }
+
     private void update() {
-        player.update(leftHeld, rightHeld);
 
         long now = System.currentTimeMillis();
+
+        if (model.isGameOver() || now < waveMessageUntil) {
+            return;
+        }
+
+        player.update(leftHeld, rightHeld);
+
         if (spaceHeld && now - lastShotTime >= Constants.SHOOT_COOLDOWN_MS) {
             int bx = player.getX() + player.getWidth() / 2 - Constants.BULLET_WIDTH / 2;
             bullets.add(new Bullet(bx, player.getY()));
@@ -89,6 +111,11 @@ public class GamePanel extends JPanel {
         bullets.removeIf(Bullet::isOffScreen);
 
         formation.update();
+
+        if (formation.lowestAliveBottom() >= player.getY()) {
+            model.endGame();
+            return;
+        }
 
         Alien[][] grid = formation.getAliens();
         List<Bullet> deadBullets = new ArrayList<>();
@@ -108,17 +135,68 @@ public class GamePanel extends JPanel {
         }
         bullets.removeAll(deadBullets);
 
+        if (alienBullets.size() < Constants.MAX_ALIEN_BULLETS && now - lastAlienShotTime >= Constants.ALIEN_SHOOT_INTERVAL_MS) {
+            Alien shooter = formation.pickShooter();
+            if (shooter != null) {
+                int bx = shooter.getX() + shooter.getWidth() / 2 - Constants.BULLET_WIDTH / 2;
+                alienBullets.add(new Bullet(bx, shooter.getY() + shooter.getHeight(), Constants.ALIEN_BULLET_SPEED));
+                lastAlienShotTime = now;
+            }
+        }
+
+        for (Bullet b : alienBullets) {
+            b.update();
+        }
+        alienBullets.removeIf(Bullet::isOffScreen);
+
+        if (!player.isInvulnerable(now)) {
+            Bullet hitBullet = null;
+            for (Bullet b : alienBullets) {
+                if (b.getBounds().intersects(player.getBounds())) {
+                    hitBullet = b;
+                }
+            }
+
+            if (hitBullet != null) {
+                alienBullets.remove(hitBullet);
+                model.loseLife();
+                if (!model.isGameOver()) {
+                    player.respawn();
+                    player.makeInvulnerable(now + Constants.INVULNERABLE_MS);
+                }
+            }
+
+        }
+
+        if (formation.isEmpty()) {
+            model.nextWave();
+            formation = new AlienFormation(Constants.WIDTH, model.getWave());
+            bullets.clear();
+            alienBullets.clear();
+            waveMessageUntil = now + Constants.WAVE_MESSAGE_MS;
+        }
+
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        long now = System.currentTimeMillis();
 
-        g.setColor(Color.GREEN);
-        g.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+        boolean showPlayer = !player.isInvulnerable(now) || (now / 100) % 2 == 0;
+
+        if (showPlayer) {
+            g.setColor(Color.GREEN);
+            g.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+        }
 
         g.setColor(Color.WHITE);
         for (Bullet b : bullets) {
+            g.fillRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+        }
+
+        g.setColor(Color.RED);
+        for (Bullet b : alienBullets) {
             g.fillRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
         }
 
@@ -136,6 +214,28 @@ public class GamePanel extends JPanel {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Monospaced", Font.BOLD, 18));
         g.drawString("SCORE: " + model.getScore(), 10, 25);
+        g.drawString("WAVE: " + model.getWave(), Constants.WIDTH / 2 - 40, 25);
+        g.drawString("LIVES: " + model.getLives(), Constants.WIDTH - 120, 25);
 
+        if (now < waveMessageUntil) {
+            g.setFont(new Font("Monospaced", Font.BOLD, 40));
+            drawCentered(g, "WAVE" + model.getWave(), Constants.HEIGHT / 2);
+        }
+
+        if (model.isGameOver()) {
+            g.setColor(Color.RED);
+            g.setFont(new Font("Monospaced", Font.BOLD, 48));
+            drawCentered(g, "GAME OVER", Constants.HEIGHT / 2 - 20);
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Monospaced", Font.BOLD, 20));
+            drawCentered(g, "Final score: " + model.getScore(), Constants.HEIGHT / 2 + 20);
+            drawCentered(g, "Press ENTER to play again", Constants.HEIGHT / 2 + 50);
+        }
+
+    }
+    
+    private void drawCentered(Graphics g, String text, int y) {
+        int textWidth = g.getFontMetrics().stringWidth(text);
+        g.drawString(text, (Constants.WIDTH - textWidth) / 2, y);
     }
 }
