@@ -294,13 +294,17 @@ public class GamePanel extends JPanel {
         drawCentered(g, "theme " + (themeIndex + 1) + " of " + Theme.ALL.length, 272);
 
         int[] points = {30, 20, 10};
-        theme.drawPlayer(g, Constants.WIDTH / 2 - 270, 320, 100, 40);
+        int cell = 120;
+        int startX = (Constants.WIDTH - 4 * cell) / 2;
+
+        theme.drawPlayer(g, startX + (cell - 100) / 2, 325, 100, 40);
         for (int i = 0; i < points.length; i++) {
-            int x = Constants.WIDTH / 2 - 120 + i * 120;
-            theme.drawAlien(g, points[i], x, 320, 75, 50);
+            int cellX = startX + (i + 1) * cell;
+            theme.drawAlien(g, points[i], cellX + (cell - 75) / 2, 320, 75, 50);
             g.setColor(Color.WHITE);
-            g.setFont(new Font("Monospaced", Font.BOLD, 16));
-            g.drawString(points[i] + " pts", x + 8, 395);
+            String label = points[i] + " pts";
+            int labelWidth = g.getFontMetrics().stringWidth(label);
+            g.drawString(label, cellX + (cell - labelWidth) / 2, 395);
 
         }
 
