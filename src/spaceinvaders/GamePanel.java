@@ -12,6 +12,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class GamePanel extends JPanel {
     private final GameModel model = new GameModel();
 
     private Screen screen = Screen.MENU;
+    private int themeIndex = 0;
 
     private boolean leftHeld, rightHeld, spaceHeld;
     private long lastShotTime = 0;
@@ -69,13 +71,26 @@ public class GamePanel extends JPanel {
         timer.start();
     }
 
+    private Theme theme() {
+        return Theme.ALL[themeIndex];
+    }
+
     private void setKey(int code, boolean down) {
 
         if (screen == Screen.MENU) {
-            if (down && code == KeyEvent.VK_ENTER) {
-                restart();
-                screen = Screen.PLAYING;
+            if (down) {
+                if (code == KeyEvent.VK_LEFT) {
+                    themeIndex = (themeIndex + Theme.ALL.length - 1) % Theme.ALL.length;
+                }
+                if (code == KeyEvent.VK_RIGHT) {
+                    themeIndex = (themeIndex + 1) % Theme.ALL.length;
+                }
+                if (code == KeyEvent.VK_ENTER) {
+                    restart();
+                    screen = Screen.PLAYING;
+                }
             }
+            return;
         }
         if (code == KeyEvent.VK_LEFT) {
             leftHeld = down;
@@ -202,26 +217,29 @@ public class GamePanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
         long now = System.currentTimeMillis();
+        Theme theme = theme();
+
+        theme.drawBackground(g2, now);
 
         if (screen == Screen.MENU) {
-            drawMenu(g);
+            drawMenu(g, theme);
             return;
         }
 
         boolean showPlayer = !player.isInvulnerable(now) || (now / 100) % 2 == 0;
 
         if (showPlayer) {
-            g.setColor(Color.GREEN);
-            g.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+            theme.drawPlayer(g, player.getX(), player.getY(), player.getWidth(), player.getHeight());
         }
 
-        g.setColor(Color.WHITE);
+        g.setColor(theme.getBulletColor());
         for (Bullet b : bullets) {
             g.fillRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
         }
 
-        g.setColor(Color.RED);
+        g.setColor(theme.getAlienBulletColor());
         for (Bullet b : alienBullets) {
             g.fillRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
         }
@@ -231,8 +249,7 @@ public class GamePanel extends JPanel {
             for (int col = 0; col < grid[row].length; col++) {
                 Alien a = grid[row][col];
                 if (a.isAlive()) {
-                    g.setColor(a.getPoints() == 30 ? Color.MAGENTA : a.getPoints() == 20 ? Color.CYAN : Color.YELLOW);
-                    g.fillRect(a.getX(), a.getY(), a.getWidth(), a.getHeight());
+                    theme.drawAlien(g, a.getPoints(), a.getX(), a.getY(), a.getWidth(), a.getHeight());
                 }
             }
         }
@@ -245,7 +262,7 @@ public class GamePanel extends JPanel {
 
         if (now < waveMessageUntil) {
             g.setFont(new Font("Monospaced", Font.BOLD, 40));
-            drawCentered(g, "WAVE" + model.getWave(), Constants.HEIGHT / 2);
+            drawCentered(g, "WAVE " + model.getWave(), Constants.HEIGHT / 2);
         }
 
         if (model.isGameOver()) {
@@ -260,19 +277,41 @@ public class GamePanel extends JPanel {
 
     }
 
-    private void drawMenu(Graphics g) {
+    private void drawMenu(Graphics g, Theme theme) {
         g.setColor(Color.WHITE);
-        g.setFont(new Font("Monospaced", Font.BOLD, 56));
-        drawCentered(g, "SPACE INVADERS", 200);
+        g.setFont(new Font("Monospaced", Font.BOLD, 48));
+        drawCentered(g, "SPACE INVADERS", 120);
 
-        g.setColor(Color.GREEN);
-        g.setFont(new Font("Monospaced", Font.BOLD, 24));
-        drawCentered(g, "Press ENTER to start", 300);
+        g.setFont(new Font("Monospaced", Font.BOLD, 20));
+        drawCentered(g, "Choose your theme", 190);
+
+        g.setColor(theme.getPlayerColor());
+        g.setFont(new Font("Monospaced", Font.BOLD, 40));
+        drawCentered(g, "<  " + theme.getName() + "  >", 245);
 
         g.setColor(Color.LIGHT_GRAY);
         g.setFont(new Font("Monospaced", Font.PLAIN, 16));
-        drawCentered(g, "LEFT / RIGHT: move", 380);
-        drawCentered(g, "SPACE: shoot", 405);
+        drawCentered(g, "theme " + (themeIndex + 1) + " of " + Theme.ALL.length, 272);
+
+        int[] points = {30, 20, 10};
+        theme.drawPlayer(g, Constants.WIDTH / 2 - 270, 320, 100, 40);
+        for (int i = 0; i < points.length; i++) {
+            int x = Constants.WIDTH / 2 - 120 + i * 120;
+            theme.drawAlien(g, points[i], x, 320, 75, 50);
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Monospaced", Font.BOLD, 16));
+            g.drawString(points[i] + " pts", x + 8, 395);
+
+        }
+
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Monospaced", Font.BOLD, 22));
+        drawCentered(g, "Press ENTER to start", 465);
+
+        g.setColor(Color.LIGHT_GRAY);
+        g.setFont(new Font("Monospaced", Font.PLAIN, 16));
+        drawCentered(g, "LEFT / RIGHT: change theme", 505);
+        drawCentered(g, "In game: LEFT / RIGHT move, SPACE shoots", 530);
 
     }
 
