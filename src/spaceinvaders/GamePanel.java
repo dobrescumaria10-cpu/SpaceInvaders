@@ -43,6 +43,11 @@ public class GamePanel extends JPanel {
     private long lastAlienShotTime = 0;
     private long waveMessageUntil = 0;
 
+    // PAUSE: true while the game is stopped
+    private boolean paused = false;
+    // PAUSE: the moment the pause started (used to "freeze" the timers)
+    private long pausedAt = 0;
+
     public GamePanel() {
         setPreferredSize(new Dimension(Constants.WIDTH, Constants.HEIGHT));
         setBackground(Color.BLACK);
@@ -75,6 +80,29 @@ public class GamePanel extends JPanel {
         return Theme.ALL[themeIndex];
     }
 
+    // PAUSE: switches between paused and running
+    private void togglePause() {
+        long now = System.currentTimeMillis();
+        if (!paused) {
+            paused = true;
+            pausedAt = now;
+        } else {
+            paused = false;
+            // The game uses real time (currentTimeMillis). Push these timers forward
+            // by the pause length so they don't "expire" while the game was stopped.
+            long pauseLength = now - pausedAt;
+            if (waveMessageUntil > pausedAt) {
+                waveMessageUntil += pauseLength;
+            }
+            lastShotTime += pauseLength;
+            lastAlienShotTime += pauseLength;
+        }
+        // Release all keys, so the player doesn't keep moving after the pause
+        leftHeld = false;
+        rightHeld = false;
+        spaceHeld = false;
+    }
+
     private void setKey(int code, boolean down) {
 
         if (screen == Screen.MENU) {
@@ -92,6 +120,23 @@ public class GamePanel extends JPanel {
             }
             return;
         }
+
+        // PAUSE: P or ESC toggles pause (only while the game is running)
+        if (down && !model.isGameOver()
+                && (code == KeyEvent.VK_P || code == KeyEvent.VK_ESCAPE)) {
+            togglePause();
+            return;
+        }
+
+        // PAUSE: while paused, M goes back to the menu; other keys are ignored
+        if (paused) {
+            if (down && code == KeyEvent.VK_M) {
+                paused = false;
+                screen = Screen.MENU;
+            }
+            return;
+        }
+
         if (code == KeyEvent.VK_LEFT) {
             leftHeld = down;
         }
@@ -123,13 +168,15 @@ public class GamePanel extends JPanel {
         leftHeld = false;
         rightHeld = false;
         spaceHeld = false;
+        paused = false;   // PAUSE: a new game never starts paused
     }
 
     private void update() {
 
         long now = System.currentTimeMillis();
 
-        if (screen == Screen.MENU || model.isGameOver() || now < waveMessageUntil) {
+        // PAUSE: "paused" added here, so nothing moves while the game is stopped
+        if (screen == Screen.MENU || paused || model.isGameOver() || now < waveMessageUntil) {
             return;
         }
 
@@ -260,9 +307,20 @@ public class GamePanel extends JPanel {
         g.drawString("WAVE: " + model.getWave(), Constants.WIDTH / 2 - 40, 25);
         g.drawString("LIVES: " + model.getLives(), Constants.WIDTH - 120, 25);
 
-        if (now < waveMessageUntil) {
+        if (now < waveMessageUntil && !paused) {
             g.setFont(new Font("Monospaced", Font.BOLD, 40));
             drawCentered(g, "WAVE " + model.getWave(), Constants.HEIGHT / 2);
+        }
+
+        // PAUSE: dark layer over the game + text in the middle
+        if (paused) {
+            g.setColor(new Color(0, 0, 0, 150));   // black, semi-transparent (150 of 255)
+            g.fillRect(0, 0, Constants.WIDTH, Constants.HEIGHT);
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Monospaced", Font.BOLD, 48));
+            drawCentered(g, "PAUSED", Constants.HEIGHT / 2 - 20);
+            g.setFont(new Font("Monospaced", Font.BOLD, 20));
+            drawCentered(g, "P / ESC: resume    M: menu", Constants.HEIGHT / 2 + 20);
         }
 
         if (model.isGameOver()) {
@@ -315,7 +373,7 @@ public class GamePanel extends JPanel {
         g.setColor(Color.LIGHT_GRAY);
         g.setFont(new Font("Monospaced", Font.PLAIN, 16));
         drawCentered(g, "LEFT / RIGHT: change theme", 505);
-        drawCentered(g, "In game: LEFT / RIGHT move, SPACE shoots", 530);
+        drawCentered(g, "In game: LEFT / RIGHT move, SPACE shoots, P pause", 530);
 
     }
 
