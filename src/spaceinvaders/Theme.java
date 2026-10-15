@@ -11,8 +11,10 @@ public class Theme {
     private static final int STARS = 0;
     private static final int BUBBLES = 1;
     private static final int GRID = 2;
+    private static final int HAUNTED = 3;   // HALLOWEEN: moon, bats and graveyard
+    private static final int ARCADE = 4;    // ARCADE: old-school arcade screen
 
-    public static final Theme[] ALL = {space(), ocean(), neon()};
+    public static final Theme[] ALL = {space(), ocean(), neon(), halloween(), arcade()};
 
     private final String name;
     private final int style;
@@ -120,6 +122,10 @@ public class Theme {
                 int y = ((dotY[i] - shift) % Constants.HEIGHT + Constants.HEIGHT) % Constants.HEIGHT;
                 g.drawOval(dotX[i], y, size, size);
             }
+        } else if (style == HAUNTED) {
+            drawHauntedBackground(g, now);
+        } else if (style == ARCADE) {
+            drawArcadeBackground(g, now);
         } else {
             drawGridBackground(g, now);
         }
@@ -150,6 +156,97 @@ public class Theme {
             g.drawLine(Constants.WIDTH / 2 + i * 8, horizon, Constants.WIDTH / 2 + i * 90, Constants.HEIGHT);
         }
         g.drawLine(0, horizon, Constants.WIDTH, horizon);
+    }
+
+    // HALLOWEEN: twinkling stars, a big moon, flying bats and a graveyard at the bottom
+    private void drawHauntedBackground(Graphics2D g, long now) {
+        // stars that blink: each star is on or off depending on the time
+        for (int i = 0; i < dotX.length; i++) {
+            if ((now / 400 + i) % 5 != 0) {
+                g.setColor(new Color(255, 240, 200, 160));
+                g.fillRect(dotX[i], dotY[i] % 400, dotSize[i], dotSize[i]);
+            }
+        }
+
+        // the moon: a soft glow, the full moon, then a few darker craters
+        int moonX = Constants.WIDTH - 200;
+        int moonY = 50;
+        g.setColor(new Color(255, 200, 120, 40));
+        g.fillOval(moonX - 25, moonY - 25, 170, 170);
+        g.setColor(new Color(255, 235, 180));
+        g.fillOval(moonX, moonY, 120, 120);
+        g.setColor(new Color(230, 205, 150));
+        g.fillOval(moonX + 25, moonY + 30, 22, 22);
+        g.setColor(new Color(230, 205, 150));
+        g.fillOval(moonX + 70, moonY + 60, 30, 30);
+        g.fillOval(moonX + 45, moonY + 85, 14, 14);
+
+        // bats: they fly from left to right and flap their wings
+        String[] wingsUp = {
+            "#........#",
+            "##..##..##",
+            ".########.",
+            "...#..#..."
+        };
+        String[] wingsDown = {
+            "..........",
+            "....##....",
+            ".########.",
+            "##.#..#.##"
+        };
+        Color batColor = new Color(110, 50, 140);
+        for (int i = 0; i < 7; i++) {
+            int speed = 12 + i * 4;                          // smaller number = faster bat
+            int x = (int) ((dotX[i] + now / speed) % (Constants.WIDTH + 60)) - 30;
+            int y = 60 + dotY[i] % 220 + (int) (10 * Math.sin(now / 300.0 + i));
+            boolean flap = (now / 150 + i) % 2 == 0;
+            drawSprite(g, flap ? wingsUp : wingsDown, x, y, 30, 12, batColor);
+        }
+
+        // graveyard: dark ground with tombstones
+        int ground = Constants.HEIGHT - 45;
+        g.setColor(new Color(15, 5, 20));
+        g.fillRect(0, ground, Constants.WIDTH, Constants.HEIGHT - ground);
+        g.setColor(new Color(40, 30, 50));
+        for (int i = 0; i < 8; i++) {
+            int tx = 30 + i * (Constants.WIDTH / 8);
+            g.fillRoundRect(tx, ground - 28, 26, 40, 14, 14);
+        }
+    }
+
+    // ARCADE: looks like the original 1978 machine - black screen, colored film strips
+    // on the glass (red at the top, green at the bottom), CRT scanlines and "INSERT COIN"
+    private void drawArcadeBackground(Graphics2D g, long now) {
+        // a few dim stars
+        g.setColor(new Color(255, 255, 255, 70));
+        for (int i = 0; i < 25; i++) {
+            g.fillRect(dotX[i], dotY[i], 1, 1);
+        }
+
+        // colored film strips, like on the real arcade cabinet
+        g.setColor(new Color(255, 0, 60, 45));
+        g.fillRect(0, 40, Constants.WIDTH, 70);
+        g.setColor(new Color(0, 255, 80, 35));
+        g.fillRect(0, Constants.HEIGHT - 150, Constants.WIDTH, 150);
+
+        // CRT scanlines: a thin light line every 4 pixels
+        g.setColor(new Color(255, 255, 255, 12));
+        for (int y = 0; y < Constants.HEIGHT; y += 4) {
+            g.drawLine(0, y, Constants.WIDTH, y);
+        }
+
+        // green ground line at the bottom
+        g.setColor(new Color(60, 255, 90));
+        g.fillRect(0, Constants.HEIGHT - 22, Constants.WIDTH, 2);
+
+        // "INSERT COIN" blinks once per second
+        if ((now / 500) % 2 == 0) {
+            g.setColor(new Color(255, 230, 60));
+            g.setFont(new java.awt.Font("Monospaced", java.awt.Font.BOLD, 14));
+            String text = "INSERT COIN";
+            int textWidth = g.getFontMetrics().stringWidth(text);
+            g.drawString(text, (Constants.WIDTH - textWidth) / 2, Constants.HEIGHT - 5);
+        }
     }
 
     private static Theme space() {
@@ -250,7 +347,7 @@ public class Theme {
                 new Color[]{new Color(255, 120, 190), new Color(120, 235, 235), new Color(255, 90, 70)},
                 new Color(255, 255, 190), new Color(255, 80, 80), player, aliens);
     }
-    
+
     private static Theme neon() {
         String[] player = {
             "........####........",
@@ -298,6 +395,107 @@ public class Theme {
                 new Color(0, 255, 255),
                 new Color[]{new Color(255, 60, 200), new Color(255, 200, 50), new Color(120, 255, 120)},
                 Color.WHITE, new Color(255, 80, 80), player, aliens);
+    }
+
+    // HALLOWEEN theme: a witch's cauldron fights pumpkins, ghosts and skulls.
+    // Eyes and mouths are '.' (empty), so the dark background shows through them.
+    private static Theme halloween() {
+        String[] player = {   // bubbling cauldron
+            "....#....#....#.....",
+            ".....#..#.#..#......",
+            "..################..",
+            "...##############...",
+            "..##w####ww####w##..",
+            "..################..",
+            "...##############...",
+            "....##........##...."
+        };
+        String[][] aliens = {
+            { // jack-o'-lantern (30 points)
+                ".....##.....",
+                "..########..",
+                ".##########.",
+                "##..####..##",
+                "#####..#####",
+                "##.#.##.#.##",
+                ".###.##.###.",
+                "..########.."
+            },
+            { // ghost (20 points)
+                "...######...",
+                "..########..",
+                ".##########.",
+                ".##..##..##.",
+                ".##..##..##.",
+                ".####..####.",
+                ".##########.",
+                ".#.##..##.#."
+            },
+            { // skull (10 points)
+                "..########..",
+                ".##########.",
+                "##..####..##",
+                "##..####..##",
+                "#####..#####",
+                ".##########.",
+                "..#.#..#.#..",
+                "..########.."
+            }
+        };
+        return new Theme("HALLOWEEN", HAUNTED, new Color(30, 0, 45), new Color(5, 0, 10),
+                new Color(120, 255, 80),
+                new Color[]{new Color(255, 140, 20), new Color(225, 225, 255), new Color(235, 230, 205)},
+                new Color(255, 160, 40), new Color(170, 255, 60), player, aliens);
+    }
+
+    // ARCADE theme: the classic laser cannon against the three original invaders
+    private static Theme arcade() {
+        String[] player = {   // laser cannon
+            ".........##.........",
+            "........####........",
+            "........####........",
+            "..################..",
+            ".##################.",
+            "####################",
+            "####################",
+            "####################"
+        };
+        String[][] aliens = {
+            { // squid (30 points)
+                ".....##.....",
+                "....####....",
+                "...######...",
+                "..##.##.##..",
+                "..########..",
+                "....#..#....",
+                "...#.##.#...",
+                "..#.#..#.#.."
+            },
+            { // crab (20 points)
+                "..#......#..",
+                "...#....#...",
+                "..########..",
+                ".##.####.##.",
+                "############",
+                "#.########.#",
+                "#.#......#.#",
+                "...##..##..."
+            },
+            { // octopus (10 points)
+                "....####....",
+                ".##########.",
+                "############",
+                "###..##..###",
+                "############",
+                "...##..##...",
+                "..##.##.##..",
+                "##........##"
+            }
+        };
+        return new Theme("ARCADE", ARCADE, Color.BLACK, Color.BLACK,
+                new Color(60, 255, 90),
+                new Color[]{new Color(255, 90, 120), Color.WHITE, new Color(150, 255, 150)},
+                Color.WHITE, new Color(255, 255, 120), player, aliens);
     }
 
 }
