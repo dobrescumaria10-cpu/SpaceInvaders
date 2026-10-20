@@ -19,11 +19,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The game screen. It runs the game loop with a Swing timer, read the keyboard,
- * updates all game objects every frame and draws them.
+ * The game screen. A {@link javax.swing.Timer} runs the game loop (about 60
+ * frames per second): every frame {@link #update()} changes the game data and
+ * {@code paintComponent} draws it. The panel shows either the start menu or the
+ * game itself, and handles the keyboard.
  */
 public class GamePanel extends JPanel {
 
+    /**
+     * the two screens of the game: the start menu and the game.
+     */
     private enum Screen {
         MENU, PLAYING
     }
@@ -48,6 +53,10 @@ public class GamePanel extends JPanel {
     // PAUSE: the moment the pause started (used to "freeze" the timers)
     private long pausedAt = 0;
 
+    /**
+     * Creates the panel, sets its size and the keyboard listener, and creates
+     * the game timer.
+     */
     public GamePanel() {
         setPreferredSize(new Dimension(Constants.WIDTH, Constants.HEIGHT));
         setBackground(Color.BLACK);
@@ -72,15 +81,26 @@ public class GamePanel extends JPanel {
 
     }
 
+    /**
+     * Starts the game loop. Called once by {@code Main} after the window is
+     * shown.
+     */
     public void start() {
         timer.start();
     }
 
+    /**
+     * @return the theme that is currently chosen in the menu
+     */
     private Theme theme() {
         return Theme.ALL[themeIndex];
     }
 
-    // PAUSE: switches between paused and running
+    /**
+     * Pauses the game, or resumes it when it is paused. On resume the timers
+     * (wave message, shooting) are moved forward by the length of the pause, so
+     * nothing expires while the game was stopped. The held keys are released.
+     */
     private void togglePause() {
         long now = System.currentTimeMillis();
         if (!paused) {
@@ -103,6 +123,15 @@ public class GamePanel extends JPanel {
         spaceHeld = false;
     }
 
+    /**
+     * Handles a key press or release. In the menu: LEFT / RIGHT change the
+     * theme and ENTER starts the game. In the game: LEFT / RIGHT move, SPACE
+     * shoots, P or ESC pauses, and after game over ENTER restarts and M opens
+     * the menu.
+     *
+     * @param code the key code from {@link KeyEvent}
+     * @param down true when the key is pressed, false when it is released
+     */
     private void setKey(int code, boolean down) {
 
         if (screen == Screen.MENU) {
@@ -157,6 +186,10 @@ public class GamePanel extends JPanel {
 
     }
 
+    /**
+     * Starts a new game: resets the model, the aliens, the bullets, the cannon
+     * and the pause.
+     */
     private void restart() {
         model.reset();
         formation = new AlienFormation(Constants.WIDTH);
@@ -171,6 +204,12 @@ public class GamePanel extends JPanel {
         paused = false;   // PAUSE: a new game never starts paused
     }
 
+    /**
+     * Changes the game data for one frame: moves the cannon, the bullets and
+     * the aliens, handles shooting, collisions, lives, game over and new waves.
+     * It does nothing in the menu, when paused, after game over, or while the
+     * wave message is shown. It never draws.
+     */
     private void update() {
 
         long now = System.currentTimeMillis();
@@ -261,6 +300,13 @@ public class GamePanel extends JPanel {
 
     }
 
+    /**
+     * Draws the current frame: the background, the menu or the game objects,
+     * the score, wave and lives, and the pause or game over text. It only reads
+     * the game data and never changes it.
+     *
+     * @param g the graphic object of the panel
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -335,6 +381,13 @@ public class GamePanel extends JPanel {
 
     }
 
+    /**
+     * Draws the start menu: the title, the chosen theme with a preview of the
+     * cannon and the three alien types (with their points), and the controls.
+     *
+     * @param g the graphics object to draw on
+     * @param theme the theme that is chosen
+     */
     private void drawMenu(Graphics g, Theme theme) {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Monospaced", Font.BOLD, 48));
@@ -377,6 +430,13 @@ public class GamePanel extends JPanel {
 
     }
 
+    /**
+     * Draws a text centered horizontally in the window.
+     *
+     * @param g the graphics object (its current font is used)
+     * @param text the text to draw
+     * @param y the y position of the baseline of the text
+     */
     private void drawCentered(Graphics g, String text, int y) {
         int textWidth = g.getFontMetrics().stringWidth(text);
         g.drawString(text, (Constants.WIDTH - textWidth) / 2, y);

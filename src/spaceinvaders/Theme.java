@@ -6,6 +6,13 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.Random;
 
+/**
+ * A look for the game: the background, the colors and the pixel-art pictures of
+ * the cannon and the aliens. A picture is a list of text rows: '#' is a pixel
+ * in the main color, 'w' is a white pixel and '.' is empty. The player chooses
+ * one of the themes in {@link #ALL} in the start menu. A theme only changes how
+ * the game looks, not how it plays.
+ */
 public class Theme {
 
     private static final int STARS = 0;
@@ -29,6 +36,22 @@ public class Theme {
     private final int[] dotY = new int[70];
     private final int[] dotSize = new int[70];
 
+    /**
+     * Creates a theme. The constructor is private: the themes are created by
+     * the methods at the end of this class.
+     *
+     * @param name the name shown in the menu
+     * @param style the background style (STARTS, BUBBLES, ...)
+     * @param top the color at the top of the background gradient
+     * @param bottom the color at the bottom of the background gradient
+     * @param playerColor the main color of the cannon
+     * @param alienColors the main colors of the aliens worth 30, 20 and 10
+     * points
+     * @param bulletColor the color of the player's bullets
+     * @param alienBulletColor the color of the alien bullets
+     * @param playerSprite the picture of the cannon (text rows)
+     * @param alienSprites the picture of the three alien types (text rows)
+     */
     private Theme(String name, int style, Color top, Color bottom, Color playerColor,
             Color[] alienColors, Color bulletColor, Color alienBulletColor,
             String[] playerSprite, String[][] alienSprites) {
@@ -51,22 +74,40 @@ public class Theme {
         }
     }
 
+    /**
+     * @return the name of the theme, shown in the menu
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * @return the main color of the cannon
+     */
     public Color getPlayerColor() {
         return playerColor;
     }
 
+    /**
+     * @return the color of the player's bullets
+     */
     public Color getBulletColor() {
         return bulletColor;
     }
 
+    /**
+     * @return the color of the alien bullets
+     */
     public Color getAlienBulletColor() {
         return alienBulletColor;
     }
 
+    /**
+     * Translates the points of an alien into the number of its picture.
+     *
+     * @param points the points of the alien (30, 20 or 10)
+     * @return 0 for 30 points, 1 for 20 points, 2 for 10 points
+     */
     private int alienIndex(int points) {
         if (points >= 30) {
             return 0;
@@ -77,15 +118,49 @@ public class Theme {
         }
     }
 
+    /**
+     * Draws the cannon picture, scaled into the given rectangle.
+     *
+     * @param g the graphics object to draw on
+     * @param x left edge of the rectangle
+     * @param y top edge of the rectangle
+     * @param w width of the rectangle
+     * @param h height of the rectangle
+     */
     public void drawPlayer(Graphics g, int x, int y, int w, int h) {
         drawSprite(g, playerSprite, x, y, w, h, playerColor);
     }
 
+    /**
+     * Draws the picture of an alien, scaled into the given rectangle. The
+     * points of the alien decide which picture and color is used.
+     *
+     * @param g the graphics object to draw on
+     * @param points the points of the alien (30, 20 or 10)
+     * @param x left edge of the rectangle
+     * @param y top edge of the rectangle
+     * @param w width of the rectangle
+     * @param h height of the rectangle
+     */
     public void drawAlien(Graphics g, int points, int x, int y, int w, int h) {
         int i = alienIndex(points);
         drawSprite(g, alienSprites[i], x, y, w, h, alienColors[i]);
     }
 
+    /**
+     * Draws a pixel-art picture scaled into a rectangle. Every pixel of the
+     * picture becomes one filled rectangle, so the same picture works at any
+     * size.
+     *
+     * @param g the graphics object to draw on
+     * @param sprite the text rows of the picture: '#' main color, 'w' white,
+     * '.' empty
+     * @param x left edge of the rectangle
+     * @param y top edge of the rectangle
+     * @param w width of the rectangle
+     * @param h height of the rectangle
+     * @param color the color of the '#' pixels
+     */
     private static void drawSprite(Graphics g, String[] sprite, int x, int y, int w, int h, Color color) {
         int rows = sprite.length;
         int cols = sprite[0].length();
@@ -104,6 +179,14 @@ public class Theme {
         }
     }
 
+    /**
+     * Draws the background of this theme: a gradient and, depending on the
+     * style, moving decorations. The movement is calculated from time, so the
+     * theme needs no extra state.
+     *
+     * @param g the graphics object to draw on
+     * @param now the current time in milliseconds
+     */
     public void drawBackground(Graphics2D g, long now) {
         g.setPaint(new GradientPaint(0, 0, top, 0, Constants.HEIGHT, bottom));
         g.fillRect(0, 0, Constants.WIDTH, Constants.HEIGHT);
@@ -131,6 +214,10 @@ public class Theme {
         }
     }
 
+    /**
+     * Draws the NEON background: starts, a sun on the horizon and a moving
+     * grid.
+     */
     private void drawGridBackground(Graphics2D g, long now) {
         int horizon = 380;
 
@@ -158,7 +245,9 @@ public class Theme {
         g.drawLine(0, horizon, Constants.WIDTH, horizon);
     }
 
-    // HALLOWEEN: twinkling stars, a big moon, flying bats and a graveyard at the bottom
+    /**
+     * Draws the HALLOWEEN background: a moon, bats and a graveyard.
+     */
     private void drawHauntedBackground(Graphics2D g, long now) {
         // stars that blink: each star is on or off depending on the time
         for (int i = 0; i < dotX.length; i++) {
@@ -214,8 +303,9 @@ public class Theme {
         }
     }
 
-    // ARCADE: looks like the original 1978 machine - black screen, colored film strips
-    // on the glass (red at the top, green at the bottom), CRT scanlines and "INSERT COIN"
+    /**
+     * Draws the ARCADE background: an old-school arcade screen
+     */
     private void drawArcadeBackground(Graphics2D g, long now) {
         // a few dim stars
         g.setColor(new Color(255, 255, 255, 70));
@@ -400,7 +490,7 @@ public class Theme {
     // HALLOWEEN theme: a witch's cauldron fights pumpkins, ghosts and skulls.
     // Eyes and mouths are '.' (empty), so the dark background shows through them.
     private static Theme halloween() {
-        String[] player = {   // bubbling cauldron
+        String[] player = { // bubbling cauldron
             "....#....#....#.....",
             ".....#..#.#..#......",
             "..################..",
@@ -450,7 +540,7 @@ public class Theme {
 
     // ARCADE theme: the classic laser cannon against the three original invaders
     private static Theme arcade() {
-        String[] player = {   // laser cannon
+        String[] player = { // laser cannon
             ".........##.........",
             "........####........",
             "........####........",

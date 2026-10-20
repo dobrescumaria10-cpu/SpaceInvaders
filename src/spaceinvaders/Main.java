@@ -8,6 +8,12 @@ import javax.swing.SwingUtilities;
  */
 public class Main {
 
+    /**
+     * Starts the game: creates the window with the game panel and starts the
+     * game loop.
+     *
+     * @param args
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Space Invaders");
@@ -25,4 +31,3 @@ public class Main {
         });
     }
 }
-  

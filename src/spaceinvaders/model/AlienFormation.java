@@ -28,11 +28,25 @@ public class AlienFormation {
     private int boardWidth;
     private int wave;
     private Random random = new Random();
-    
+
+    /**
+     * Creates the first wave of aliens.
+     *
+     * @param boardWidth the width of the playing filed, used to detect the
+     * edges
+     */
     public AlienFormation(int boardWidth) {
         this(boardWidth, 1);
     }
 
+    /**
+     * Creates a grid of aliens for the given wave. The aliens of the rows get
+     * 30, 20, 20, 10 and 10 points (from the top). Later waves move faster.
+     *
+     * @param boardWidth the width of the playing field, used to detect the
+     * edges
+     * @param wave the wave number, starting at 1
+     */
     public AlienFormation(int boardWidth, int wave) {
         this.boardWidth = boardWidth;
         this.wave = wave;
@@ -46,10 +60,16 @@ public class AlienFormation {
         }
     }
 
+    /**
+     * @return the grid of aliens (rows x columns), including the dead ones
+     */
     public Alien[][] getAliens() {
         return aliens;
     }
 
+    /**
+     * @return how many aliens are still alive
+     */
     public int countAlive() {
         int count = 0;
         for (int row = 0; row < ROWS; row++) {
@@ -62,10 +82,20 @@ public class AlienFormation {
         return count;
     }
 
+    /**
+     * @return true when all aliens are dead (the wave is cleared)
+     */
     public boolean isEmpty() {
         return countAlive() == 0;
     }
-    
+
+    /**
+     * Picks the alien that shoots next: the lowest alive alien of a random
+     * column. Only the lowest alien of a column can shoot, so aliens never fire
+     * through their own friends.
+     *
+     * @return the shooting alien, or null when no alien is alive
+     */
     public Alien pickShooter() {
         int start = random.nextInt(COLS);
         for (int i = 0; i < COLS; i++) {
@@ -78,7 +108,14 @@ public class AlienFormation {
         }
         return null;
     }
-    
+
+    /**
+     * Finds the lowest point of the formation. When it reaches the cannon, the
+     * game is over.
+     *
+     * @return the y of the bottom edge of the lowest alive alien, or 0 if none
+     * is alive
+     */
     public int lowestAliveBottom() {
         int bottom = 0;
         for (int row = 0; row < ROWS; row++) {
@@ -87,23 +124,29 @@ public class AlienFormation {
                 if (a.isAlive()) {
                     bottom = Math.max(bottom, a.getY() + a.getHeight());
                 }
-                
+
             }
         }
         return bottom;
     }
 
+    /**
+     * Calculates the speed in pixels per frame. It rises with the wave and with
+     * the number of killed aliens, so the last aliens are the fastest.
+     *
+     * @return the number of pixels the aliens move in one frame
+     */
     private int currentSpeed() {
         int total = ROWS * COLS;
         int killed = total - countAlive();
         return SPEED + (wave - 1) + killed * 4 / total;
     }
 
-    // UPDATE - called every frame from GameModel; moves the formation.
-    // 1. Goes through all living aliens and checks whether any of them would
-    //    leave the screen on the next step (nextX < 0 or nextX + WIDTH > boardWidth).
-    // 2. If yes: reverses direction (direction = -direction) and the whole formation moves down 20 pixels.
-    // 3. If no: they all move sideways by SPEED pixels (right or left).
+    /**
+     * Moves the formation one step. The aliens move sideways together. When one
+     * alive alien would leave the window, the whole formation steps down and
+     * reverses direction instead. Called once per frame.
+     */
     public void update() {
         int speed = currentSpeed();
 
