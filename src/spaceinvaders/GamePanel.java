@@ -15,6 +15,10 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.AlphaComposite;
+import java.awt.Composite;
+import java.awt.FontMetrics;
+import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -370,16 +374,7 @@ public class GamePanel extends JPanel {
         }
 
         if (model.isGameOver()) {
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, Constants.WIDTH, Constants.HEIGHT);
-
-            g.setColor(Color.RED);
-            g.setFont(new Font("Monospaced", Font.BOLD, 48));
-            drawCentered(g, "GAME OVER", Constants.HEIGHT / 2 - 20);
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Monospaced", Font.BOLD, 20));
-            drawCentered(g, "Final score: " + model.getScore(), Constants.HEIGHT / 2 + 20);
-            drawCentered(g, "ENTER: play again    M: menu", Constants.HEIGHT / 2 + 50);
+            drawGameOver(g2);
         }
 
     }
@@ -443,5 +438,45 @@ public class GamePanel extends JPanel {
     private void drawCentered(Graphics g, String text, int y) {
         int textWidth = g.getFontMetrics().stringWidth(text);
         g.drawString(text, (Constants.WIDTH - textWidth) / 2, y);
+    }
+
+    private final Font gameOverBaseFont = new Font("Monospaced", Font.BOLD, 48);
+
+    /**
+     * Draws the game over screen: a dark layer over the game, a pulsing "GAME
+     * OVER" text, and the keys to restart or go to the menu. The pulse follows
+     * a sine wave over time, so the text slowly fades in and out and grows and
+     * shrinks a little.
+     *
+     * @param g2 the graphics object to draw on
+     */
+    private void drawGameOver(Graphics2D g2) {
+        
+        g2.setColor(new Color(0, 0, 0, 150));
+        g2.fillRect(0, 0, Constants.WIDTH, Constants.HEIGHT);
+
+        double seconds = System.currentTimeMillis() / 1000.0;
+        double pulsesPerSecond = 0.8;
+        double pulse = (Math.sin(seconds * 2 * Math.PI * pulsesPerSecond) + 1) / 2;
+
+        float alpha = (float) (0.35 + 0.65 * pulse);  
+        float size = (float) (48 + 8 * pulse);        
+
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        Composite oldComposite = g2.getComposite();
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        g2.setColor(Color.RED);
+        g2.setFont(gameOverBaseFont.deriveFont(size));
+        drawCentered(g2, "GAME OVER", Constants.HEIGHT / 2 - 10);
+        g2.setComposite(oldComposite);
+
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font("Monospaced", Font.BOLD, 20));
+        drawCentered(g2, "FINAL SCORE: " + model.getScore(), Constants.HEIGHT / 2 + 30);
+        g2.setColor(Color.LIGHT_GRAY);
+        g2.setFont(new Font("Monospaced", Font.PLAIN, 18));
+        drawCentered(g2, "ENTER: play again    M: menu", Constants.HEIGHT / 2 + 60);
     }
 }
