@@ -370,6 +370,9 @@ public class GamePanel extends JPanel {
         }
 
         if (model.isGameOver()) {
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, Constants.WIDTH, Constants.HEIGHT);
+
             g.setColor(Color.RED);
             g.setFont(new Font("Monospaced", Font.BOLD, 48));
             drawCentered(g, "GAME OVER", Constants.HEIGHT / 2 - 20);
